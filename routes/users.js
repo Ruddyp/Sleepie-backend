@@ -11,19 +11,19 @@ const bcrypt = require("bcrypt");
 router.post('/signup', (req, res) => {
   const { email, username, password } = req.body;
   if (!checkBody(req.body, ["email", "username", "password"])) {
-    return res.json({ result: false, error: "Missing or empty fields" });
+    return res.json({ result: false, error: "Champ(s) vide(s)" });
 
   }
 
   // Vérification de l'email
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$/;
   const isValidEmail = (email) => emailRegex.test(email);
-  if (!isValidEmail(email)) return res.json({ result: false, error: "email invalid" })
+  if (!isValidEmail(email)) return res.json({ result: false, error: "Email invalide" })
 
   try {
     // Vérification si l'email existe dans la BDD
     User.findOne({ email: email }).then((data) => {
-      if (data !== null) return res.json({ result: false, error: "This email already exists" })
+      if (data !== null) return res.json({ result: false, error: "Email déjà existant" })
 
       const hash = bcrypt.hashSync(password, 10);
 
@@ -55,11 +55,11 @@ router.post('/signup', (req, res) => {
 router.post('/signin', (req, res) => {
   const { email, password } = req.body;
   if (!checkBody(req.body, ["email", "password"])) {
-    return res.json({ result: false, error: "Missing or empty fields" });
+    return res.json({ result: false, error: "Champ(s) vide(s)" });
   }
   try {
     User.findOne({ email: email }).then((data) => {
-      if (data === null) return res.json({ result: false, error: "This email doesn't exists!" });
+      if (data === null) return res.json({ result: false, error: "Email incorrect" });
 
       if (data && bcrypt.compareSync(password, data.password)) {
         res.json({
@@ -71,7 +71,7 @@ router.post('/signin', (req, res) => {
           }
         });
       } else {
-        res.json({ result: false, error: "Wrong password" });
+        res.json({ result: false, error: "Mauvais mot de passe" });
       }
 
     });
