@@ -5,7 +5,7 @@ const userSchema = mongoose.Schema({
     username: { type: String, required: true },
     password: { type: String, required: true },
     token: { type: String, required: true },
-    rôle: { type: String, default: "user" },
+    role: { type: String, default: "user" },
     recently_played: [{ type: mongoose.Schema.Types.ObjectId, ref: 'stories', required: true }],
 });
 
