@@ -1,5 +1,7 @@
 var express = require('express');
 var router = express.Router();
+const User = require('../models/users');
+
 
 const uniqid = require('uniqid');
 const cloudinary = require('cloudinary').v2;
@@ -16,6 +18,9 @@ router.post('/upload', async (req, res) => {
         const resultCloudinary = await cloudinary.uploader.upload(mp3Path, { resource_type: "raw" });
         fs.unlinkSync(mp3Path);
         res.json({ result: true, url: resultCloudinary.secure_url })
+
+
+
     } else {
         res.json({ result: false, error: resultMove })
     }
