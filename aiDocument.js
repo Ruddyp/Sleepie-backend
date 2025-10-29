@@ -29,7 +29,7 @@ Contraintes :
 
 Commence maintenant.
 `.trim();
-
+// TEST GENERATION
 const testGeneration = async () => {
   const out = await client.chatCompletion({
     model: "meta-llama/Llama-3.1-70B-Instruct",
