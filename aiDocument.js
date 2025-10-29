@@ -58,7 +58,7 @@ testGeneration();
 
 // ELEVENLABS QUICKSTART
 
-import { ElevenLabsClient, play } from "@elevenlabs/elevenlabs-js";
+import { ElevenLabsClient /*, play*/ } from "@elevenlabs/elevenlabs-js";
 import { Readable } from "node:stream";
 import fs from "node:fs";
 import "dotenv/config";
