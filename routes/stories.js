@@ -51,7 +51,7 @@ const testGeneration = async (storyPrompt, client) => {
 
 };
 
-// ROUTE DE TEST COMPLETE
+// ROUTE COMPLETE
 
 router.post('/create', async (req, res) => {
 
@@ -63,6 +63,8 @@ router.post('/create', async (req, res) => {
 
     const storyPrompt = `
 Écris une histoire réaliste d’environ ${nbWords} mots.
+A partir de cette histoire, génère un titre de 40 caractères maximum
+Insère ce titre, sans le préciser au début de l'histoire
 
 Type d’histoire : ${req.body.storyType}  
 Protagoniste : ${req.body.protagonist}  
@@ -84,8 +86,12 @@ Contraintes :
 Commence maintenant.
 `.trim();
 
-    // ELEVENLABS QUICKSTART
     const textFromIA = await testGeneration(storyPrompt, client);
+    // Récupération du titre 
+    const title = textFromIA.split('\n')[0].trim();
+
+
+    // ELEVENLABS QUICKSTART
     const EL_TOKEN = process.env.ELEVENLABS_API_KEY;
     const EL_VOICE = process.env.ELEVENLABS_VOICE_ID; // voix personnalisée optionnelle
 
@@ -137,6 +143,7 @@ Commence maintenant.
             url: cloudinaryUrl,
             author: user._id,
             created_at: new Date(),
+            title: title,
             configuration: {
                 duration: req.body.duration,
                 speaker: voiceId,
