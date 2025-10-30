@@ -1,5 +1,3 @@
-const { get } = require("mongoose");
-
 const imageUrl = [
     "https://images.unsplash.com/photo-1503264116251-35a269479413",
     "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
