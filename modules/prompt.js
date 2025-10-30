@@ -4,7 +4,7 @@
 const WPM = 120; // 120 mots/minute
 
 function wordsFromMinutes(min) {
-  return Math(n * WPM);
+  return min * WPM;
 }
 
 // Normalise les noms venant de l'app (compatibilité avec ton body actuel)
