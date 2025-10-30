@@ -16,6 +16,7 @@ const storySchema = mongoose.Schema({
     label: [{ type: mongoose.Schema.Types.ObjectId, ref: 'categories', default: [] }],
     title: { type: String, required: true, default: "Histoire sans titre" },
     configuration: { type: configurationSchema, required: true },
+    image: { type: String },
 
 });
 

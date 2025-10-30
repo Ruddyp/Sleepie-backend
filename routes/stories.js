@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const User = require('../models/users');
 const Story = require('../models/stories');
+const { getRandomImageUrl } = require('../modules/prompt');
 
 const { InferenceClient } = require("@huggingface/inference");
 
@@ -64,7 +65,7 @@ router.post('/create', async (req, res) => {
     const storyPrompt = `
 Écris une histoire réaliste d’environ ${nbWords} mots.
 A partir de cette histoire, génère un titre de 40 caractères maximum
-Insère ce titre, sans le préciser au début de l'histoire
+Insère ce titre, sans le préciser au début de l'histoire puis passe à la ligne pour commencer l'histoire.
 
 Type d’histoire : ${req.body.storyType}  
 Protagoniste : ${req.body.protagonist}  
@@ -89,6 +90,8 @@ Commence maintenant.
     const textFromIA = await testGeneration(storyPrompt, client);
     // Récupération du titre 
     const title = textFromIA.split('\n')[0].trim();
+    // Récupéaration d'une image aléatoire
+    const imageUrl = getRandomImageUrl();
 
 
     // ELEVENLABS QUICKSTART
@@ -144,6 +147,7 @@ Commence maintenant.
             author: user._id,
             created_at: new Date(),
             title: title,
+            image: imageUrl,
             configuration: {
                 duration: req.body.duration,
                 speaker: voiceId,
@@ -152,9 +156,7 @@ Commence maintenant.
         await newStory.save();
         const story = await Story.findOne({ url: cloudinaryUrl })
 
-        res.json({
-            result: true, story: story
-        })
+        res.json({ result: true, story: story })
 
 
     } catch (error) {
@@ -166,24 +168,4 @@ Commence maintenant.
 
 module.exports = router;
 
-
-// A RECUPERER POUR TESTER L'UPLOAD DEPUIS LA RECUPERATION EVLEN LABS
-// const formData = new FormData();
-//     formData.append('mp3FromElevenLabs', {
-//       uri: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-//       type: 'audio/mp3',
-//       name: 'monAudio.mp3',
-//     });
-//     console.log(formData)
-
-//     try {
-//       const response = await fetch(`http://${IP}:${port}/cloudinary/upload`, {
-//         method: 'POST',
-//         body: formData,
-//       })
-//       const data = await response.json();
-//       console.log("Response from backend:", data);
-//     } catch (error) {
-//       console.log("Error while uploading to Cloudinary:", error);
-//     }
 
