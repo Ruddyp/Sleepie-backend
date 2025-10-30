@@ -11,10 +11,10 @@ const storySchema = mongoose.Schema({
     url: { type: String, required: true },
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
     created_at: { type: Date, required: true },
-    like: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true }],
-    listen_counter: { type: Number, required: true },
-    label: [{ type: mongoose.Schema.Types.ObjectId, ref: 'categories' }],
-    title: { type: String, required: true },
+    like: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users', default: [] }],
+    listen_counter: { type: Number, default: 0 },
+    label: [{ type: mongoose.Schema.Types.ObjectId, ref: 'categories', default: [] }],
+    title: { type: String, required: true, default: "Histoire sans titre" },
     configuration: { type: configurationSchema, required: true },
 
 });
