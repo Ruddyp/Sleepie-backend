@@ -146,13 +146,7 @@ Commence maintenant.
         const story = await Story.findOne({ url: cloudinaryUrl })
 
         res.json({
-            result: true, data: {
-                id: story._id,
-                title: story.title,
-                url: story.cloudinaryUrl,
-                created_at: story.created_at,
-                author: story.author,
-            }
+            result: true, story: story
         })
 
 
