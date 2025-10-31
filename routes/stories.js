@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const User = require("../models/users");
 const Story = require("../models/stories");
+const Category = require("../models/categories")
 const { checkBody } = require("../modules/checkBody");
 const { getRandomImageUrl } = require("../modules/images");
 
@@ -144,19 +145,18 @@ router.post("/create", async (req, res) => {
 
 
 // ROUTE GET STORIES BY AUTHOR
-router.post("/getbyauthor", async (req, res) => {
-  const { author } = req.body;
-  if (!checkBody(req.body, ["author"])) {
-    return res.json({ result: false, error: "Manque un author Id pour réaliser la requête" });
-  }
+router.get("/sleepiestories", async (req, res) => {
+
+  const sleepyId = process.env.SLEEPIE_ID;
+
   try {
-    const stories = await Story.find({ author: req.body.author }).populate("label");
+    const stories = await Story.find({ author: sleepyId }).populate("label");
     if (stories.length === 0) {
       return res.json({ result: false, error: "Aucune histoire trouvée pour cet utilisateur" });
     }
     res.json({ result: true, stories: stories });
   } catch (error) {
-    console.log("error in /getbyauthor", error);
+    console.log("error in /sleepiestories", error);
     res.json({ result: false, error: "Erreur serveur lors de la récupération des histoires" });
   }
 });
