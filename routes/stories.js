@@ -150,7 +150,7 @@ router.get("/sleepiestories", async (req, res) => {
   const sleepyId = process.env.SLEEPIE_ID;
 
   try {
-    const stories = await Story.find({ author: sleepyId }).populate("label").populate("author");
+    const stories = await Story.find({ author: sleepyId }).populate("label").populate("author").populate("like");
     if (stories.length === 0) {
       return res.json({ result: false, error: "Aucune histoire trouvée pour cet utilisateur" });
     }
