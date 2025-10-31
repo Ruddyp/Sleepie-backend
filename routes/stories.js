@@ -165,7 +165,10 @@ router.get("/sleepiestories", async (req, res) => {
   const sleepyId = process.env.SLEEPIE_ID;
 
   try {
-    const stories = await Story.find({ author: sleepyId }).populate("label").populate("author").populate("like");
+    const stories = await Story.find({ author: sleepyId })
+      .populate("label")
+      .populate("author")
+      .populate("like");
     if (stories.length === 0) {
       return res.json({
         result: false,
@@ -212,8 +215,10 @@ router.post("/favorites", async (req, res) => {
   }
 });
 
+// ROUTE POST LIKE
+
 router.post("/like", async (req, res) => {
-  console.log(req.body)
+  console.log(req.body);
   const { token, storyId } = req.body;
   if (!checkBody(req.body, ["token", "storyId"])) {
     return res.json({ result: false, error: "Missing or empty fields" });
@@ -221,39 +226,43 @@ router.post("/like", async (req, res) => {
 
   // recherche du user
   try {
-    const user = await User.findOne({ token: token })
+    const user = await User.findOne({ token: token });
     if (!user) {
       return res.json({ result: false, message: "User doesn't exist" });
     }
     // recherche de la story
-    const story = await Story.findById(storyId)
+    const story = await Story.findById(storyId);
     if (!story) {
-      return res.json({ result: false, message: "Story doesn't exist" })
+      return res.json({ result: false, message: "Story doesn't exist" });
     }
 
-    const alreadyLiked = story.like.some(id => id.toString() === user._id.toString());
+    const alreadyLiked = story.like.some(
+      (id) => id.toString() === user._id.toString()
+    );
 
-    let newLikeArray = story.like
+    let newLikeArray = story.like;
 
     if (alreadyLiked) {
-      newLikeArray = newLikeArray.filter(id => id.toString() !== user._id.toString());
+      newLikeArray = newLikeArray.filter(
+        (id) => id.toString() !== user._id.toString()
+      );
     } else {
-      newLikeArray.push(user._id)
+      newLikeArray.push(user._id);
     }
 
-    const resultat = await Story.updateOne({ _id: storyId }, { like: newLikeArray })
-    console.log("resultat", resultat)
+    const resultat = await Story.updateOne(
+      { _id: storyId },
+      { like: newLikeArray }
+    );
+    console.log("resultat", resultat);
     if (resultat.modifiedCount === 1) {
-      res.json({ result: true, message: "Story successfully like/unlike" })
+      res.json({ result: true, message: "Story successfully like/unlike" });
     } else {
-      res.json({ result: false, message: "No modification" })
+      res.json({ result: false, message: "No modification" });
     }
-
   } catch (error) {
-    res.json({ result: false, messageFromCatch: error.message })
+    res.json({ result: false, messageFromCatch: error.message });
   }
-
-})
-
+});
 
 module.exports = router;
