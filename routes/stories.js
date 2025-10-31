@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 const User = require("../models/users");
 const Story = require("../models/stories");
-const Category = require("../models/categories")
+const Category = require("../models/categories");
 const { checkBody } = require("../modules/checkBody");
 const { getRandomImageUrl } = require("../modules/images");
 
@@ -11,15 +11,13 @@ const { InferenceClient } = require("@huggingface/inference");
 const { ElevenLabsClient /*, play*/ } = require("@elevenlabs/elevenlabs-js");
 const { Readable } = require("node:stream");
 
-const { getUserPrompt, getSystemPrompt } = require('../modules/prompt')
+const { getUserPrompt, getSystemPrompt } = require("../modules/prompt");
 
 require("dotenv/config");
 
 const uniqid = require("uniqid");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
-
-
 
 async function UploadMP3ToCLoudinary(mp3Path) {
   const resultCloudinary = await cloudinary.uploader.upload(mp3Path, {
@@ -28,8 +26,6 @@ async function UploadMP3ToCLoudinary(mp3Path) {
   fs.unlinkSync(mp3Path);
   return resultCloudinary.secure_url;
 }
-
-
 
 const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
   const out = await client.chatCompletion({
@@ -52,9 +48,19 @@ const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
 // ROUTE COMPLETE
 
 router.post("/create", async (req, res) => {
-  console.log("body", req.body)
-  const { token, storyType, location, protagonist, effect, duration } = req.body;
-  if (!checkBody(req.body, ["token", "storyType", "location", "protagonist", "effect", "duration"])) {
+  console.log("body", req.body);
+  const { token, storyType, location, protagonist, effect, duration } =
+    req.body;
+  if (
+    !checkBody(req.body, [
+      "token",
+      "storyType",
+      "location",
+      "protagonist",
+      "effect",
+      "duration",
+    ])
+  ) {
     return res.json({ result: false, error: "Information manquantes" });
   }
 
@@ -62,14 +68,25 @@ router.post("/create", async (req, res) => {
   const client = new InferenceClient(HF_TOKEN);
 
   // Construire les prompts
-  const userPrompt = getUserPrompt(req.body.storyType, req.body.location, req.body.protagonist, req.body.effect, req.body.duration);
+  const userPrompt = getUserPrompt(
+    req.body.storyType,
+    req.body.location,
+    req.body.protagonist,
+    req.body.effect,
+    req.body.duration
+  );
   const systemPrompt = getSystemPrompt();
 
   // Génération du texte
-  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, req.body.duration * 120 * 1.3);
+  const textFromIA = await textGeneration(
+    systemPrompt,
+    userPrompt,
+    client,
+    req.body.duration * 120 * 1.3
+  );
 
   //Extraction du title
-  const title = textFromIA.split('\n')[0];
+  const title = textFromIA.split("\n")[0];
 
   // Récupéaration d'une image aléatoire
   const imageUrl = getRandomImageUrl();
@@ -143,21 +160,55 @@ router.post("/create", async (req, res) => {
   }
 });
 
-
 // ROUTE GET STORIES BY AUTHOR
 router.get("/sleepiestories", async (req, res) => {
-
   const sleepyId = process.env.SLEEPIE_ID;
 
   try {
     const stories = await Story.find({ author: sleepyId }).populate("label");
     if (stories.length === 0) {
-      return res.json({ result: false, error: "Aucune histoire trouvée pour cet utilisateur" });
+      return res.json({
+        result: false,
+        error: "Aucune histoire trouvée pour cet utilisateur",
+      });
     }
     res.json({ result: true, stories: stories });
   } catch (error) {
     console.log("error in /sleepiestories", error);
-    res.json({ result: false, error: "Erreur serveur lors de la récupération des histoires" });
+    res.json({
+      result: false,
+      error: "Erreur serveur lors de la récupération des histoires",
+    });
+  }
+});
+
+// ROUTE GET STORIES BY FAVORITES
+
+router.post("/favorites", async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.json({ result: false, error: "Token manquant" });
+  }
+  try {
+    const user = await User.findOne({ token: token });
+    if (!user) {
+      return res.json({ result: false, error: "Utilisateur non trouvé" });
+    }
+    const myStories = await Story.find({ author: user._id })
+      .populate("author")
+      .populate("like");
+    const storiesLiked = await Story.find({
+      like: { $in: [user._id] },
+    })
+      .populate("author")
+      .populate("like");
+    res.json({ result: true, myStories, storiesLiked });
+  } catch (error) {
+    console.log("error in /favorites", error);
+    res.json({
+      result: false,
+      error: "Erreur serveur lors de la récupération des histoires favorites",
+    });
   }
 });
 
