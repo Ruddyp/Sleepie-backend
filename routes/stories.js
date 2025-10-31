@@ -3,7 +3,6 @@ var router = express.Router();
 const User = require("../models/users");
 const Story = require("../models/stories");
 const { checkBody } = require("../modules/checkBody");
-const Category = require("../models/categories");
 const { getRandomImageUrl } = require("../modules/images");
 
 const { InferenceClient } = require("@huggingface/inference");
@@ -11,18 +10,15 @@ const { InferenceClient } = require("@huggingface/inference");
 const { ElevenLabsClient /*, play*/ } = require("@elevenlabs/elevenlabs-js");
 const { Readable } = require("node:stream");
 
+const { getUserPrompt, getSystemPrompt } = require('../modules/prompt')
+
 require("dotenv/config");
 
 const uniqid = require("uniqid");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
-const { wordsFromMinutes, buildStoryPrompts, extractTitleAndBody } = require("../modules/prompt");
-const { max, duration } = require("moment/moment");
 
-// lier les 3 étapes
-// ajouter uniqid pour nom de fichier unique
-// supprimer le fichier local après upload
 
 async function UploadMP3ToCLoudinary(mp3Path) {
   const resultCloudinary = await cloudinary.uploader.upload(mp3Path, {
@@ -32,7 +28,9 @@ async function UploadMP3ToCLoudinary(mp3Path) {
   return resultCloudinary.secure_url;
 }
 
-const testGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
+
+
+const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
   const out = await client.chatCompletion({
     model: "meta-llama/Llama-3.1-70B-Instruct",
     messages: [
@@ -53,31 +51,25 @@ const testGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
 // ROUTE COMPLETE
 
 router.post("/create", async (req, res) => {
-  const HF_TOKEN = process.env.HUGGINGFACE_API_KEY;
+  console.log("body", req.body)
+  const { token, storyType, location, protagonist, effect, duration } = req.body;
+  if (!checkBody(req.body, ["token", "storyType", "location", "protagonist", "effect", "duration"])) {
+    return res.json({ result: false, error: "Information manquantes" });
+  }
 
+  const HF_TOKEN = process.env.HUGGINGFACE_API_KEY;
   const client = new InferenceClient(HF_TOKEN);
 
-  // 1) Durée -> mots cibles via wordsFromMinutes
-  const durationMin = Number(req.body.duration) || 5;
-  const targetWords = wordsFromMinutes(durationMin);
-  console.log("[DEBUG] duration:", durationMin, "=> targetWords:", targetWords);
-
   // Construire les prompts
-  const { system, user } = buildStoryPrompts({
-    voice: req.body.voice,
-    storyType: req.body.storyType, // ex: "voyage" | "rencontre" | "lieu" | "journee"
-    location: req.body.location, // "mer" | "nature" | "village" | "imaginaire"
-    protagonist: req.body.protagonist, // "voyageur" | "habitant" | "confident" | "reveur"
-    effect: req.body.effect, // "realiste" | "meditative" | "introspective" | "imaginaire"
-    duration: req.body.duration, // minutes
-  });
+  const userPrompt = getUserPrompt(req.body.storyType, req.body.location, req.body.protagonist, req.body.effect, req.body.duration);
+  const systemPrompt = getSystemPrompt();
 
   // Génération du texte
-  const textFromIA = await testGeneration(system, user, client, targetWords * 1.5);
-  // Récupération du titre
-  const { title, body } = extractTitleAndBody(textFromIA);
-  console.log({ title });
-  console.log({ body });
+  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, req.body.duration * 120 * 1.3);
+
+  //Extraction du title
+  const title = textFromIA.split('\n')[0];
+
   // Récupéaration d'une image aléatoire
   const imageUrl = getRandomImageUrl();
 
@@ -97,7 +89,7 @@ router.post("/create", async (req, res) => {
   const voiceId = EL_VOICE || "21m00Tcm4TlvDq8ikWAM";
 
   const audio = await clientEL.textToSpeech.convert(voiceId, {
-    text: body, //ajouter le résultat de la génération de texte ici
+    text: textFromIA, //ajouter le résultat de la génération de texte ici
     modelId: "eleven_multilingual_v2",
     outputFormat: "mp3_44100_128",
   });
@@ -149,6 +141,7 @@ router.post("/create", async (req, res) => {
     res.json({ result: false, error: error.message });
   }
 });
+
 
 // ROUTE GET STORIES BY AUTHOR
 router.post("/getbyauthor", async (req, res) => {
