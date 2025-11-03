@@ -49,17 +49,9 @@ const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
 
 router.post("/create", async (req, res) => {
   console.log("body", req.body);
-  const { token, storyType, location, protagonist, effect, duration } =
-    req.body;
+  const { token, storyType, location, protagonist, effect, duration } = req.body;
   if (
-    !checkBody(req.body, [
-      "token",
-      "storyType",
-      "location",
-      "protagonist",
-      "effect",
-      "duration",
-    ])
+    !checkBody(req.body, ["token", "storyType", "location", "protagonist", "effect", "duration"])
   ) {
     return res.json({ result: false, error: "Information manquantes" });
   }
@@ -68,22 +60,11 @@ router.post("/create", async (req, res) => {
   const client = new InferenceClient(HF_TOKEN);
 
   // Construire les prompts
-  const userPrompt = getUserPrompt(
-    req.body.storyType,
-    req.body.location,
-    req.body.protagonist,
-    req.body.effect,
-    req.body.duration
-  );
+  const userPrompt = getUserPrompt(storyType, location, protagonist, effect, duration);
   const systemPrompt = getSystemPrompt();
 
   // Génération du texte
-  const textFromIA = await textGeneration(
-    systemPrompt,
-    userPrompt,
-    client,
-    req.body.duration * 120 * 1.3
-  );
+  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, duration * 120 * 1.3);
 
   //Extraction du title
   const title = textFromIA.split("\n")[0];
@@ -136,7 +117,7 @@ router.post("/create", async (req, res) => {
     const cloudinaryUrl = await UploadMP3ToCLoudinary(mp3Path);
 
     // Sauvegarde en base de données
-    const user = await User.findOne({ token: req.body.token });
+    const user = await User.findOne({ token: token });
     if (!user) {
       return res.json({ result: false, error: "Utilisateur non trouvé" });
     }
@@ -147,14 +128,14 @@ router.post("/create", async (req, res) => {
       title: title,
       image: imageUrl,
       configuration: {
-        duration: req.body.duration,
+        duration: duration,
         speaker: voiceId,
       },
     });
     await newStory.save();
     const story = await Story.findOne({ url: cloudinaryUrl });
 
-    res.json({ result: true, story: story });
+    res.json({ result: true, story: { ...story, author: user } });
   } catch (error) {
     res.json({ result: false, error: error.message });
   }
@@ -197,9 +178,7 @@ router.post("/favorites", async (req, res) => {
     if (!user) {
       return res.json({ result: false, error: "Utilisateur non trouvé" });
     }
-    const myStories = await Story.find({ author: user._id })
-      .populate("author")
-      .populate("like");
+    const myStories = await Story.find({ author: user._id }).populate("author").populate("like");
     const storiesLiked = await Story.find({
       like: { $in: [user._id] },
     })
@@ -236,24 +215,17 @@ router.post("/like", async (req, res) => {
       return res.json({ result: false, message: "Story doesn't exist" });
     }
 
-    const alreadyLiked = story.like.some(
-      (id) => id.toString() === user._id.toString()
-    );
+    const alreadyLiked = story.like.some((id) => id.toString() === user._id.toString());
 
     let newLikeArray = story.like;
 
     if (alreadyLiked) {
-      newLikeArray = newLikeArray.filter(
-        (id) => id.toString() !== user._id.toString()
-      );
+      newLikeArray = newLikeArray.filter((id) => id.toString() !== user._id.toString());
     } else {
       newLikeArray.push(user._id);
     }
 
-    const resultat = await Story.updateOne(
-      { _id: storyId },
-      { like: newLikeArray }
-    );
+    const resultat = await Story.updateOne({ _id: storyId }, { like: newLikeArray });
     console.log("resultat", resultat);
     if (resultat.modifiedCount === 1) {
       res.json({ result: true, message: "Story successfully like/unlike" });
