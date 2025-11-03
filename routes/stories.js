@@ -133,9 +133,9 @@ router.post("/create", async (req, res) => {
       },
     });
     await newStory.save();
-    const story = await Story.findOne({ url: cloudinaryUrl });
+    const story = await Story.findOne({ url: cloudinaryUrl }).populate("author");
 
-    res.json({ result: true, story: { ...story, author: user } });
+    res.json({ result: true, story: story });
   } catch (error) {
     res.json({ result: false, error: error.message });
   }
