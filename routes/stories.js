@@ -64,7 +64,7 @@ router.post("/create", async (req, res) => {
   const systemPrompt = getSystemPrompt();
 
   // Génération du texte
-  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, duration * 120 * 1.3);
+  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, duration * 160 * 1.3);
 
   //Extraction du title
   const title = textFromIA.split("\n")[0];

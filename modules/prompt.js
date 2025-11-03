@@ -1,5 +1,5 @@
 
-const WPM = 120; // 120 mots/minute
+const WPM = 160; // 120 mots/minute
 
 function wordsFromMinutes(min) {
     return min * WPM;
