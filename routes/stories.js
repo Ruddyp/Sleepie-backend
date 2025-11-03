@@ -237,4 +237,37 @@ router.post("/like", async (req, res) => {
   }
 });
 
+// route au play d'une histoire. MAJ du counter de la story + ajout de la story dans les "dernières écoutes"
+
+router.post("/play", async (req, res) => {
+  const { token, storyId } = req.body;
+  if (!checkBody(req.body, ["token", "storyId"])) {
+    return res.json({ result: false, error: "Missing or empty fields" });
+  }
+  try {
+    await Story.updateOne(
+      { _id: storyId },
+      { $inc: { listen_counter: 1 } },
+    )
+    const user = await User.findOne({ token: token })
+    if (!user) {
+      return res.json({ result: false, message: "user not found" })
+    }
+    user.recently_played = user.recently_played.filter(
+      (id) => id.toString() !== storyId
+    );
+
+    user.recently_played.unshift(storyId)
+    const newArray = user.recently_played
+    if (newArray.length > 10) {
+      newArray.pop()
+    }
+    await user.save()
+    res.json({ result: true, message: "counter mis à jour et tableau recently_played modifié" })
+  } catch (error) {
+    res.json({ result: false, messageFromCatch: error.message })
+
+  }
+})
+
 module.exports = router;
