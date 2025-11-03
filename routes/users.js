@@ -23,7 +23,7 @@ router.post("/signup", async (req, res) => {
   try {
     // Vérification si l'email existe dans la BDD
     const user = await User.findOne({ email: email });
-    if (!user) return res.json({ result: false, error: "Email déjà existant" });
+    if (user) return res.json({ result: false, error: "Email déjà existant" });
 
     const hash = bcrypt.hashSync(password, 10);
 
