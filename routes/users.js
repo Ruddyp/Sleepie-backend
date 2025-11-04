@@ -60,7 +60,25 @@ router.post("/signin", async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email: req.body.email }).populate("recently_played");
+    const user = await User.findOne({ email: req.body.email })
+      .populate({
+        // Le premier niveau : peupler l'array 'recently_played'
+        path: "recently_played",
+
+        // Le second niveau : peupler les références à l'intérieur de CHAQUE histoire
+        populate: [
+          {
+            path: "author", // Peupler la référence 'author' dans le document Story
+          },
+          {
+            path: "label", // Peupler la référence 'label' dans le document Story
+          },
+          {
+            path: "like", // Peupler la référence 'label' dans le document Story
+          },
+        ],
+      })
+      .exec(); // Bonne pratique d'utiliser .exec() à la fin
     if (user === null) return res.json({ result: false, error: "Email incorrect" });
 
     const { username, token, email, recently_played } = user;
@@ -76,6 +94,8 @@ router.post("/signin", async (req, res) => {
         .populate("author")
         .populate("label")
         .populate("like");
+
+      console.log("liked");
 
       res.json({
         result: true,
