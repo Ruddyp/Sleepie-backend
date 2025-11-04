@@ -67,13 +67,17 @@ router.post("/signin", async (req, res) => {
     if (user && bcrypt.compareSync(password, user.password)) {
       const createdStories = await Story.find({ author: user._id })
         .populate("author")
+        .populate("label")
         .populate("like");
 
       const likedStories = await Story.find({
         like: { $in: [user._id] },
       })
         .populate("author")
+        .populate("label")
         .populate("like");
+
+      console.log("liked");
 
       res.json({
         result: true,
