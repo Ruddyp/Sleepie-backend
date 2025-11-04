@@ -35,7 +35,7 @@ const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
       { role: "user", content: userPrompt },
     ],
     max_tokens: max_tokens, // ~1000 mots (1 mot ≈ 1.3 à 1.5 tokens)
-    temperature: 0.7,
+    temperature: 0.8,
     top_p: 0.9,
     presence_penalty: 0.1,
     frequency_penalty: 0.3,
@@ -60,8 +60,16 @@ function resolveVoiceId(persona) {
 
 router.post("/create", async (req, res) => {
   console.log("body", req.body);
-  const { token, storyType, location, protagonist, effect, duration, voice } =
-    req.body;
+  const {
+    token,
+    storyType,
+    location,
+    protagonist,
+    effect,
+    duration,
+    voice,
+    name,
+  } = req.body;
   if (
     !checkBody(req.body, [
       "token",
@@ -85,7 +93,8 @@ router.post("/create", async (req, res) => {
     location,
     protagonist,
     effect,
-    duration
+    duration,
+    name
   );
   const systemPrompt = getSystemPrompt();
 
@@ -121,11 +130,6 @@ router.post("/create", async (req, res) => {
     text: textFromIA, //ajouter le résultat de la génération de texte ici
     modelId: "eleven_flash_v2_5",
     outputFormat: "mp3_44100_96",
-    voiceSettings: {
-      stability: 0.55,
-      similarityBoost: 0.85,
-      use_speaker_boost: true,
-    },
   });
 
   // Transformer le reader en stream Node

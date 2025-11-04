@@ -50,11 +50,6 @@ const effect = {
     "Réalise un glissement poétique **discret** (réalisme magique doux) sans rupture brusque.",
 };
 
-const choice1 = "voyage";
-const choice2 = "mer";
-const choice3 = "voyageur";
-const choice4 = "realiste";
-
 function generateDetailledChoices(choice1, choice2, choice3, choice4) {
   return {
     storyType: storyType[choice1],
@@ -64,7 +59,11 @@ function generateDetailledChoices(choice1, choice2, choice3, choice4) {
   };
 }
 
-const getUserPrompt = (choice1, choice2, choice3, choice4, duration) => {
+const getUserPrompt = (choice1, choice2, choice3, choice4, duration, name) => {
+  //   const displayName = "";
+  //   if (name) {
+  //     displayName = `Le protagoniste s'appelle ${name}. `;
+  //   }
   const nbWords = wordsFromMinutes(duration);
   const detailledChoice = generateDetailledChoices(
     choice1,
@@ -72,17 +71,26 @@ const getUserPrompt = (choice1, choice2, choice3, choice4, duration) => {
     choice3,
     choice4
   );
+
+  const protagonistLine = choice3
+    ? `- Héros : ${choice3} : ${detailledChoice.protagonist}`
+    : "- Héros : libre, à ton choix (garde le ton apaisant et humain).";
+
+  const nameLine = name ? `- Le protagoniste s'appelle ${name}.` : "";
+
   return `
 Consignes générales :
 - Écris une histoire originale et apaisante en français (~${nbWords} mots, tolérance ±5 %).
 - Le récit doit avoir un **sens clair** et une **progression douce** (jamais statique).
 - Évite les énumérations sensorielles et la redondance ; sélectionne des images **signifiantes**.
 - Conclus toujours sur une **retombée paisible**.
+- Tu dois **absolument respecter le nombre de mots** indiqué pour la durée.
 
 Guide selon les choix ci-dessous : 
 - Type d'histoire : ${choice1} : ${detailledChoice.storyType} 
 - Cadre et ambiance : ${choice2} : ${detailledChoice.location}
-- Héros : ${choice3} : ${detailledChoice.protagonist}
+${protagonistLine}
+${nameLine ? nameLine + "\n" : ""}
 - Atmosphère intérieure : ${choice4} : ${detailledChoice.effect}
 
 Sortie :
