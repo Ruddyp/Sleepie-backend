@@ -270,4 +270,33 @@ router.post("/play", async (req, res) => {
   }
 })
 
+// ROUTE GET TOP TEN FROM SLEEPIE
+router.get("/mostlistenedstories", async (req, res) => {
+  const sleepyId = process.env.SLEEPIE_ID;
+
+  try {
+    const stories = await Story.find({ author: sleepyId })
+      .populate("label")
+      .populate("author")
+      .populate("like");
+    if (stories.length === 0) {
+      return res.json({
+        result: false,
+        error: "Aucune histoire trouvée pour cet utilisateur",
+      });
+    }
+    const mostListenedStories = stories
+      .sort((a, b) => b.listen_counter - a.listen_counter)
+      .slice(0, 10);
+
+    res.json({ result: true, mostListenedStories: mostListenedStories });
+  } catch (error) {
+    console.log("error in /sleepiestories", error);
+    res.json({
+      result: false,
+      error: "Erreur serveur lors de la récupération des histoires",
+    });
+  }
+});
+
 module.exports = router;
