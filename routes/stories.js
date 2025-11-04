@@ -45,13 +45,33 @@ const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
   return out.choices[0].message.content;
 };
 
+const voiceMap = {
+  clement: "jUHQdLfy668sllNiNTSW",
+  emilie: "qMfbtjrTDTlGtBy52G6E",
+  nicolas: "aQROLel5sQbj1vuIVi6B",
+  sandra: "1sN2yEgg4e2fcRWbLnuF",
+};
+
+function resolveVoiceId(persona) {
+  return voiceMap[String(persona).toLowerCase()];
+}
+
 // ROUTE COMPLETE
 
 router.post("/create", async (req, res) => {
   console.log("body", req.body);
-  const { token, storyType, location, protagonist, effect, duration } = req.body;
+  const { token, storyType, location, protagonist, effect, duration, voice } =
+    req.body;
   if (
-    !checkBody(req.body, ["token", "storyType", "location", "protagonist", "effect", "duration"])
+    !checkBody(req.body, [
+      "token",
+      "storyType",
+      "location",
+      "protagonist",
+      "effect",
+      "duration",
+      "voice",
+    ])
   ) {
     return res.json({ result: false, error: "Information manquantes" });
   }
@@ -60,11 +80,22 @@ router.post("/create", async (req, res) => {
   const client = new InferenceClient(HF_TOKEN);
 
   // Construire les prompts
-  const userPrompt = getUserPrompt(storyType, location, protagonist, effect, duration);
+  const userPrompt = getUserPrompt(
+    storyType,
+    location,
+    protagonist,
+    effect,
+    duration
+  );
   const systemPrompt = getSystemPrompt();
 
   // Génération du texte
-  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, duration * 160 * 1.3);
+  const textFromIA = await textGeneration(
+    systemPrompt,
+    userPrompt,
+    client,
+    duration * 160 * 1.3
+  );
 
   //Extraction du title
   const title = textFromIA.split("\n")[0];
@@ -74,7 +105,6 @@ router.post("/create", async (req, res) => {
 
   // ELEVENLABS QUICKSTART
   const EL_TOKEN = process.env.ELEVENLABS_API_KEY;
-  const EL_VOICE = process.env.ELEVENLABS_VOICE_ID; // voix personnalisée optionnelle
 
   if (!EL_TOKEN) {
     throw new Error("Missing ELEVENLABS_API_KEY in .env");
@@ -85,12 +115,17 @@ router.post("/create", async (req, res) => {
   });
 
   // Choix de la voix
-  const voiceId = EL_VOICE || "21m00Tcm4TlvDq8ikWAM";
+  const voiceId = resolveVoiceId(voice);
 
   const audio = await clientEL.textToSpeech.convert(voiceId, {
     text: textFromIA, //ajouter le résultat de la génération de texte ici
-    modelId: "eleven_multilingual_v2",
-    outputFormat: "mp3_44100_128",
+    modelId: "eleven_flash_v2_5",
+    outputFormat: "mp3_44100_96",
+    voiceSettings: {
+      stability: 0.55,
+      similarityBoost: 0.85,
+      use_speaker_boost: true,
+    },
   });
 
   // Transformer le reader en stream Node
@@ -133,7 +168,9 @@ router.post("/create", async (req, res) => {
       },
     });
     await newStory.save();
-    const story = await Story.findOne({ url: cloudinaryUrl }).populate("author");
+    const story = await Story.findOne({ url: cloudinaryUrl }).populate(
+      "author"
+    );
 
     res.json({ result: true, story: story });
   } catch (error) {
@@ -178,7 +215,9 @@ router.post("/favorites", async (req, res) => {
     if (!user) {
       return res.json({ result: false, error: "Utilisateur non trouvé" });
     }
-    const myStories = await Story.find({ author: user._id }).populate("author").populate("like");
+    const myStories = await Story.find({ author: user._id })
+      .populate("author")
+      .populate("like");
     const storiesLiked = await Story.find({
       like: { $in: [user._id] },
     })
@@ -215,17 +254,24 @@ router.post("/like", async (req, res) => {
       return res.json({ result: false, message: "Story doesn't exist" });
     }
 
-    const alreadyLiked = story.like.some((id) => id.toString() === user._id.toString());
+    const alreadyLiked = story.like.some(
+      (id) => id.toString() === user._id.toString()
+    );
 
     let newLikeArray = story.like;
 
     if (alreadyLiked) {
-      newLikeArray = newLikeArray.filter((id) => id.toString() !== user._id.toString());
+      newLikeArray = newLikeArray.filter(
+        (id) => id.toString() !== user._id.toString()
+      );
     } else {
       newLikeArray.push(user._id);
     }
 
-    const resultat = await Story.updateOne({ _id: storyId }, { like: newLikeArray });
+    const resultat = await Story.updateOne(
+      { _id: storyId },
+      { like: newLikeArray }
+    );
     console.log("resultat", resultat);
     if (resultat.modifiedCount === 1) {
       res.json({ result: true, message: "Story successfully like/unlike" });
@@ -245,30 +291,29 @@ router.post("/play", async (req, res) => {
     return res.json({ result: false, error: "Missing or empty fields" });
   }
   try {
-    await Story.updateOne(
-      { _id: storyId },
-      { $inc: { listen_counter: 1 } },
-    )
-    const user = await User.findOne({ token: token })
+    await Story.updateOne({ _id: storyId }, { $inc: { listen_counter: 1 } });
+    const user = await User.findOne({ token: token });
     if (!user) {
-      return res.json({ result: false, message: "user not found" })
+      return res.json({ result: false, message: "user not found" });
     }
     user.recently_played = user.recently_played.filter(
       (id) => id.toString() !== storyId
     );
 
-    user.recently_played.unshift(storyId)
-    const newArray = user.recently_played
+    user.recently_played.unshift(storyId);
+    const newArray = user.recently_played;
     if (newArray.length > 10) {
-      newArray.pop()
+      newArray.pop();
     }
-    await user.save()
-    res.json({ result: true, message: "counter mis à jour et tableau recently_played modifié" })
+    await user.save();
+    res.json({
+      result: true,
+      message: "counter mis à jour et tableau recently_played modifié",
+    });
   } catch (error) {
-    res.json({ result: false, messageFromCatch: error.message })
-
+    res.json({ result: false, messageFromCatch: error.message });
   }
-})
+});
 
 // ROUTE GET TOP TEN FROM SLEEPIE
 router.get("/mostlistenedstories", async (req, res) => {
