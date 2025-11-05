@@ -31,38 +31,43 @@ Anti-répétition (très important) :
 };
 
 const storyType = {
-  voyage:
-    "Structure : 3–4 étapes de déplacement avec repères sensoriels légers.",
-  rencontre:
-    "Structure : 2–3 moments d'échange (préparation, cœur, retombée douce).",
-  lieu: "Structure : découverte progressive d'un lieu (zones/espaces) sans surcharge descriptive.",
-  journee:
-    "Structure : progression temporelle (matin → après-midi → soir) avec mini-rituels.",
+  "Un voyage":
+    "Structure : 3–4 étapes de déplacement dans un lieu dépaysant propice au voyage.",
+  "Une rencontre":
+    "Structure : 2–3 moments d'échange calme entre deux personnes bienveillantes.",
+  "Un lieu à explorer":
+    "Structure : découverte progressive d'un lieu (zones/espaces) sans surcharge descriptive.",
+  "Un moment de vie":
+    "Structure : progression temporelle (matin → après-midi → soir) dans un moment de vie du quotidien.",
 };
 const location = {
-  mer: "Présence discrète : souffle du vent, rythme des vagues, lumière salée.",
-  nature: "Présence discrète : feuillages, relief, souffle du vent, matières.",
-  village: "Présence discrète : ruelles, voix lointaines, objets du quotidien.",
-  imaginaire:
-    "Imaginaire doux et crédible : réalisme poétique, jamais l'aventure spectaculaire.",
+  "Près de la mer":
+    "L'action de l'histoire se déroule en bord de mer ou en mer : sur un bateau, dans une ville au bord de la mer, sur la plage ou tout autre endroit proche de la mer.",
+  "Dans la nature":
+    "L'action de l'histoire se déroule dans un environnement naturel : forêt, montagne, campagne, désert, etc.",
+  "À la campagne":
+    "L'action de l'histoire se déroule dans un environnement rural : ferme, petit village, hameau, etc.",
+  "Dans un lieu imaginaire ":
+    "L'action de l'histoire se déroule dans un lieu inventé, magique ou fantastique, mais toujours apaisant et crédible.",
 };
 const protagonist = {
-  voyageur:
-    "Point de vue en mouvement, curiosité calme, observation ciblée (pas d'inventaire).",
-  habitant: "Point de vue ancré, gestes concrets, temporalité stable.",
-  confident:
-    "Point de vue humain, brèves interactions/chaleur, dialogues courts et naturels.",
-  reveur:
-    "Point de vue poétique mais **ancré**, images légères sans flou excessif.",
+  Voyageur:
+    "Le personnage principal est un explorateur curieux, ouvert d'esprit, et attentif aux détails de son environnement.",
+  "Vous et moi":
+    "Le personnage principal est un résident calme, ancré dans son quotidien, et en harmonie avec son environnement.",
+  Confident:
+    "Le personnage principal est une personne bienveillante, à l'écoute, et capable de créer des liens chaleureux avec les autres.",
+  Rêveur:
+    "Le personnage principal est une personne imaginative, poétique, et capable de voir la beauté dans les petites choses.",
 };
 const effect = {
-  realiste:
+  Réaliste:
     "Ancrage réel, objets/gestes/sons identifiables, éviter toute irruption d'irréel.",
-  meditative:
+  "Méditative ":
     "Rythme lent mais **signifiant** ; privilégier respiration et sensations **sélectionnées**.",
-  introspective:
+  "Introspective ":
     "Pensées calmes et claires, compréhension douce ; pas de lourdeur psychologique.",
-  imaginaire:
+  Imaginaire:
     "Réalise un glissement poétique **discret** (réalisme magique doux) sans rupture brusque.",
 };
 
@@ -92,10 +97,6 @@ const getUserPrompt = (
     choice4
   );
 
-  const protagonistLine = choice3
-    ? `- Héros : ${choice3} : ${detailledChoice.protagonist}`
-    : "- Héros : libre, à ton choix (garde le ton apaisant et humain).";
-
   const nameLine = characterName
     ? `- Le protagoniste s'appelle ${characterName}.`
     : "";
@@ -119,7 +120,7 @@ Consignes générales :
 Guide selon les choix ci-dessous : 
 - Type d'histoire : ${choice1} : ${detailledChoice.storyType} 
 - Cadre et ambiance : ${choice2} : ${detailledChoice.location}
-${protagonistLine}
+- Protagoniste : ${choice3} : ${detailledChoice.protagonist}
 ${nameLine ? nameLine + "\n" : ""}
 ${weatherLine ? weatherLine + "\n" : ""}
 - Atmosphère intérieure : ${choice4} : ${detailledChoice.effect}
