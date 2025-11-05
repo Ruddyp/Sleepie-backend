@@ -60,16 +60,7 @@ function resolveVoiceId(persona) {
 
 router.post("/create", async (req, res) => {
   console.log("body", req.body);
-  const {
-    token,
-    storyType,
-    location,
-    protagonist,
-    effect,
-    duration,
-    voice,
-    otherParam,
-  } = req.body;
+  const { token, storyType, location, protagonist, effect, duration, voice, otherParam } = req.body;
   const { characterName, weather } = otherParam;
   if (
     !checkBody(req.body, [
@@ -101,12 +92,7 @@ router.post("/create", async (req, res) => {
   const systemPrompt = getSystemPrompt();
 
   // Génération du texte
-  const textFromIA = await textGeneration(
-    systemPrompt,
-    userPrompt,
-    client,
-    duration * 160 * 1.3
-  );
+  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, duration * 160 * 1.3);
 
   //Extraction du title
   const title = textFromIA.split("\n")[0];
@@ -130,11 +116,12 @@ router.post("/create", async (req, res) => {
 
   const audio = await clientEL.textToSpeech.convert(voiceId, {
     text: textFromIA, //ajouter le résultat de la génération de texte ici
-    modelId: "eleven_multilingual_v2",
-    outputFormat: "mp3_44100_128",
+    modelId: "eleven_flash_v2_5",
+    outputFormat: "mp3_44100_96",
     voiceSettings: {
       stability: 0.65,
       useSpeakerBoost: true,
+      speed: 0.92,
     },
   });
 
@@ -178,9 +165,7 @@ router.post("/create", async (req, res) => {
       },
     });
     await newStory.save();
-    const story = await Story.findOne({ url: cloudinaryUrl }).populate(
-      "author"
-    );
+    const story = await Story.findOne({ url: cloudinaryUrl }).populate("author");
 
     res.json({ result: true, story: story });
   } catch (error) {
@@ -225,9 +210,7 @@ router.post("/favorites", async (req, res) => {
     if (!user) {
       return res.json({ result: false, error: "Utilisateur non trouvé" });
     }
-    const myStories = await Story.find({ author: user._id })
-      .populate("author")
-      .populate("like");
+    const myStories = await Story.find({ author: user._id }).populate("author").populate("like");
     const storiesLiked = await Story.find({
       like: { $in: [user._id] },
     })
@@ -264,24 +247,17 @@ router.post("/like", async (req, res) => {
       return res.json({ result: false, message: "Story doesn't exist" });
     }
 
-    const alreadyLiked = story.like.some(
-      (id) => id.toString() === user._id.toString()
-    );
+    const alreadyLiked = story.like.some((id) => id.toString() === user._id.toString());
 
     let newLikeArray = story.like;
 
     if (alreadyLiked) {
-      newLikeArray = newLikeArray.filter(
-        (id) => id.toString() !== user._id.toString()
-      );
+      newLikeArray = newLikeArray.filter((id) => id.toString() !== user._id.toString());
     } else {
       newLikeArray.push(user._id);
     }
 
-    const resultat = await Story.updateOne(
-      { _id: storyId },
-      { like: newLikeArray }
-    );
+    const resultat = await Story.updateOne({ _id: storyId }, { like: newLikeArray });
     console.log("resultat", resultat);
     if (resultat.modifiedCount === 1) {
       res.json({ result: true, message: "Story successfully like/unlike" });
@@ -306,9 +282,7 @@ router.post("/play", async (req, res) => {
     if (!user) {
       return res.json({ result: false, message: "user not found" });
     }
-    user.recently_played = user.recently_played.filter(
-      (id) => id.toString() !== storyId
-    );
+    user.recently_played = user.recently_played.filter((id) => id.toString() !== storyId);
 
     user.recently_played.unshift(storyId);
     const newArray = user.recently_played;
