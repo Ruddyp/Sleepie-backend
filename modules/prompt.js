@@ -7,10 +7,26 @@ function wordsFromMinutes(min) {
 const getSystemPrompt = () => {
   return `
 Tu es un auteur francophone d'histoires apaisantes audio.
-Écris des récits immersifs, fluides et sensibles **sans** tomber dans la contemplation statique ni la description exhaustive.
-Chaque scène doit faire **avancer une idée ou une émotion** et garder un **fil narratif clair** (début → progression douce → conclusion apaisante).
-Style : français clair et chaleureux, phrases variées (courtes/longues), zéro inventaire de sensations, pas de conflit fort, pas de suspense.
-Toujours conclure par une descente calme.
+
+But :
+- Écrire des récits immersifs, fluides et sensibles, **sans lourdeur ni redondance**.
+- Narration claire : **début → évolution → retombée paisible**.
+- Personnages humains crédibles, dialogues **brefs** et naturels (si utiles).
+
+Style :
+- Français clair et chaleureux, rythme varié (phrases courtes/moyennes/longues).
+- Images **sélectionnées** : chaque détail doit **faire avancer** l’idée ou l’émotion.
+- **Aucune énumération sensorielle** ni description statique.
+- Jamais abstrait ou dissertation philosophique : c'est une **histoire incarnée**.
+- Toujours conclure par une **descente calme**.
+
+Anti-répétition (très important) :
+- Après la **première** mention du prénom, privilégie **il/elle** et la **périphrase** ; **n’écris le prénom qu’une fois toutes les 4–6 phrases** (sauf dialogue).
+- Varie l’attaque des phrases : évite une suite de phrases commençant par **Il/Elle**.
+- Ne répète pas un même mot saillant (adjectif/verbe/image) dans un **périmètre de 2 phrases** : utilise des **synonymes**.
+- Mentionne la **météo une fois** (mise en place), puis laisse-la en **arrière-plan**.
+- Une seule métaphore légère par paragraphe, pas de tics de langage.
+- Avant de finir, fais une **micro-relecture** : supprime répétitions et doublons, fusionne les phrases redondantes.
 `.trim();
 };
 
@@ -59,11 +75,15 @@ function generateDetailledChoices(choice1, choice2, choice3, choice4) {
   };
 }
 
-const getUserPrompt = (choice1, choice2, choice3, choice4, duration, name) => {
-  //   const displayName = "";
-  //   if (name) {
-  //     displayName = `Le protagoniste s'appelle ${name}. `;
-  //   }
+const getUserPrompt = (
+  choice1,
+  choice2,
+  choice3,
+  choice4,
+  duration,
+  characterName,
+  weather
+) => {
   const nbWords = wordsFromMinutes(duration);
   const detailledChoice = generateDetailledChoices(
     choice1,
@@ -76,13 +96,23 @@ const getUserPrompt = (choice1, choice2, choice3, choice4, duration, name) => {
     ? `- Héros : ${choice3} : ${detailledChoice.protagonist}`
     : "- Héros : libre, à ton choix (garde le ton apaisant et humain).";
 
-  const nameLine = name ? `- Le protagoniste s'appelle ${name}.` : "";
+  const nameLine = characterName
+    ? `- Le protagoniste s'appelle ${characterName}.`
+    : "";
+  const weatherLine = weather
+    ? `- L'histoire se déroule avec une météo : ${weather}.`
+    : "";
 
   return `
 Consignes générales :
-- Écris une histoire originale et apaisante en français (~${nbWords} mots, tolérance ±5 %).
+- Écris une histoire originale, apaisante et **narrativement cohérente** (~${nbWords} mots, tolérance –0 %, +5 %).
+- Le texte doit contenir **au minimum ${nbWords} mots**. Si nécessaire, ajoute de petites scènes ou dialogues pour atteindre ce seuil sans rallonger artificiellement.
+- Structure obligatoire : **début (mise en place)** → **milieu (évolution)** → **fin (retombée douce)**.
 - Le récit doit avoir un **sens clair** et une **progression douce** (jamais statique).
+- Intègre **au moins un personnage nommé**, crédible et bienveillant.
+- Aucune énumération de sensations. Choisis des détails concrets et signifiants.
 - Évite les énumérations sensorielles et la redondance ; sélectionne des images **signifiantes**.
+- Le ton doit rester **serein et humain**, jamais abstrait.
 - Conclus toujours sur une **retombée paisible**.
 - Tu dois **absolument respecter le nombre de mots** indiqué pour la durée.
 
@@ -91,6 +121,7 @@ Guide selon les choix ci-dessous :
 - Cadre et ambiance : ${choice2} : ${detailledChoice.location}
 ${protagonistLine}
 ${nameLine ? nameLine + "\n" : ""}
+${weatherLine ? weatherLine + "\n" : ""}
 - Atmosphère intérieure : ${choice4} : ${detailledChoice.effect}
 
 Sortie :

@@ -68,8 +68,9 @@ router.post("/create", async (req, res) => {
     effect,
     duration,
     voice,
-    name,
+    otherParam,
   } = req.body;
+  const { characterName, weather } = otherParam;
   if (
     !checkBody(req.body, [
       "token",
@@ -94,7 +95,8 @@ router.post("/create", async (req, res) => {
     protagonist,
     effect,
     duration,
-    name
+    characterName,
+    weather
   );
   const systemPrompt = getSystemPrompt();
 
@@ -128,8 +130,12 @@ router.post("/create", async (req, res) => {
 
   const audio = await clientEL.textToSpeech.convert(voiceId, {
     text: textFromIA, //ajouter le résultat de la génération de texte ici
-    modelId: "eleven_flash_v2_5",
-    outputFormat: "mp3_44100_96",
+    modelId: "eleven_multilingual_v2",
+    outputFormat: "mp3_44100_128",
+    voiceSettings: {
+      stability: 0.65,
+      useSpeakerBoost: true,
+    },
   });
 
   // Transformer le reader en stream Node
