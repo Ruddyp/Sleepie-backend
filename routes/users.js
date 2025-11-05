@@ -61,7 +61,7 @@ router.post("/signin", async (req, res) => {
 
   try {
     const user = await User.findOne({ email: req.body.email }).populate("recently_played");
-    if (user === null) return res.json({ result: false, error: "Email incorrect" });
+    if (user === null) return res.json({ result: false, error: "Erreur dans l'email ou dans le mot de passe" });
 
     const { username, token, email, recently_played } = user;
     if (user && bcrypt.compareSync(password, user.password)) {
@@ -93,7 +93,7 @@ router.post("/signin", async (req, res) => {
         },
       });
     } else {
-      res.json({ result: false, error: "Mauvais mot de passe" });
+      res.json({ result: false, error: "Erreur dans l'email ou dans le mot de passe" });
     }
   } catch (error) {
     res.json({ result: false, error, message: "catch" });
