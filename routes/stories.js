@@ -62,6 +62,21 @@ router.post("/create", async (req, res) => {
   console.log("body", req.body);
   const { token, storyType, location, protagonist, effect, duration, voice, otherParam } = req.body;
   const { characterName, weather } = otherParam;
+  console.log("VOIX", voice);
+  console.log(
+    "STORY TYPE",
+    storyType,
+    "LOCATION",
+    location,
+    "PROTAGONIST",
+    protagonist,
+    "EFFECT",
+    effect,
+    "OTHER PARAM",
+    otherParam,
+    "DURATION",
+    duration
+  );
   if (
     !checkBody(req.body, [
       "token",
@@ -90,17 +105,18 @@ router.post("/create", async (req, res) => {
     weather
   );
   const systemPrompt = getSystemPrompt();
-
+  console.log("USER PROMPT", userPrompt);
+  console.log("SYSTEM PROMPT", systemPrompt);
   // Génération du texte
   const textFromIA = await textGeneration(systemPrompt, userPrompt, client, duration * 160 * 1.3);
 
-  //Extraction du title
+  // //Extraction du title
   const title = textFromIA.split("\n")[0];
 
-  // Récupéaration d'une image aléatoire
+  // // Récupéaration d'une image aléatoire
   const imageUrl = getRandomImageUrl();
 
-  // ELEVENLABS QUICKSTART
+  // // ELEVENLABS QUICKSTART
   const EL_TOKEN = process.env.ELEVENLABS_API_KEY;
 
   if (!EL_TOKEN) {
@@ -111,7 +127,7 @@ router.post("/create", async (req, res) => {
     apiKey: EL_TOKEN,
   });
 
-  // Choix de la voix
+  // // Choix de la voix
   const voiceId = resolveVoiceId(voice);
 
   const audio = await clientEL.textToSpeech.convert(voiceId, {
@@ -125,7 +141,7 @@ router.post("/create", async (req, res) => {
     },
   });
 
-  // Transformer le reader en stream Node
+  // // Transformer le reader en stream Node
   const reader = audio.getReader();
   const stream = new Readable({
     async read() {
@@ -134,7 +150,7 @@ router.post("/create", async (req, res) => {
     },
   });
 
-  // 2) Pour SAUVEGARDER en MP3 :
+  // // 2) Pour SAUVEGARDER en MP3 :
   const mp3Path = `./${uniqid()}_story.mp3`;
   const mp3 = fs.createWriteStream(mp3Path);
   stream.pipe(mp3);
@@ -144,11 +160,11 @@ router.post("/create", async (req, res) => {
   });
   console.log("MP3 enregistré : ", mp3Path);
 
-  // Upload vers Cloudinary
+  // // Upload vers Cloudinary
   try {
     const cloudinaryUrl = await UploadMP3ToCLoudinary(mp3Path);
 
-    // Sauvegarde en base de données
+    //   // Sauvegarde en base de données
     const user = await User.findOne({ token: token });
     if (!user) {
       return res.json({ result: false, error: "Utilisateur non trouvé" });
