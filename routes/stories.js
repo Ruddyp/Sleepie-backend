@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 const User = require("../models/users");
 const Story = require("../models/stories");
-const Category = require("../models/categories");
+require("../models/categories");
 const { checkBody } = require("../modules/checkBody");
 const { getRandomImageUrl } = require("../modules/images");
 
@@ -19,6 +19,8 @@ const uniqid = require("uniqid");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
+//CONFIG CLOUDINARY
+
 async function UploadMP3ToCLoudinary(mp3Path) {
   const resultCloudinary = await cloudinary.uploader.upload(mp3Path, {
     resource_type: "raw",
@@ -26,6 +28,8 @@ async function UploadMP3ToCLoudinary(mp3Path) {
   fs.unlinkSync(mp3Path);
   return resultCloudinary.secure_url;
 }
+
+//GENERATION TEXT IA
 
 const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
   const out = await client.chatCompletion({
@@ -41,9 +45,10 @@ const textGeneration = async (systemPrompt, userPrompt, client, max_tokens) => {
     frequency_penalty: 0.3,
   });
 
-  console.log(out.choices[0].message.content);
   return out.choices[0].message.content;
 };
+
+//VOICE IA
 
 const voiceMap = {
   clement: "jUHQdLfy668sllNiNTSW",
@@ -56,27 +61,20 @@ function resolveVoiceId(persona) {
   return voiceMap[String(persona).toLowerCase()];
 }
 
-// ROUTE COMPLETE
+// ROUTE CREATE STORY
 
 router.post("/create", async (req, res) => {
-  console.log("body", req.body);
-  const { token, storyType, location, protagonist, effect, duration, voice, otherParam } = req.body;
-  const { characterName, weather } = otherParam;
-  console.log("VOIX", voice);
-  console.log(
-    "STORY TYPE",
+  const {
+    token,
     storyType,
-    "LOCATION",
     location,
-    "PROTAGONIST",
     protagonist,
-    "EFFECT",
     effect,
-    "OTHER PARAM",
+    duration,
+    voice,
     otherParam,
-    "DURATION",
-    duration
-  );
+  } = req.body;
+  const { characterName, weather } = otherParam;
   if (
     !checkBody(req.body, [
       "token",
@@ -94,7 +92,8 @@ router.post("/create", async (req, res) => {
   const HF_TOKEN = process.env.HUGGINGFACE_API_KEY;
   const client = new InferenceClient(HF_TOKEN);
 
-  // Construire les prompts
+  // CONSTRUCTION DU PROMPT
+
   const userPrompt = getUserPrompt(
     storyType,
     location,
@@ -105,18 +104,24 @@ router.post("/create", async (req, res) => {
     weather
   );
   const systemPrompt = getSystemPrompt();
-  console.log("USER PROMPT", userPrompt);
-  console.log("SYSTEM PROMPT", systemPrompt);
-  // Génération du texte
-  const textFromIA = await textGeneration(systemPrompt, userPrompt, client, duration * 160 * 1.3);
 
-  // //Extraction du title
+  // GENERATION DU TEXTE
+
+  const textFromIA = await textGeneration(
+    systemPrompt,
+    userPrompt,
+    client,
+    duration * 160 * 1.3
+  );
+
+  // //Extraction title
   const title = textFromIA.split("\n")[0];
 
   // // Récupéaration d'une image aléatoire
   const imageUrl = getRandomImageUrl();
 
-  // // ELEVENLABS QUICKSTART
+  // ELEVENLABS
+
   const EL_TOKEN = process.env.ELEVENLABS_API_KEY;
 
   if (!EL_TOKEN) {
@@ -127,7 +132,7 @@ router.post("/create", async (req, res) => {
     apiKey: EL_TOKEN,
   });
 
-  // // Choix de la voix
+  // Choix de la voix
   const voiceId = resolveVoiceId(voice);
 
   const audio = await clientEL.textToSpeech.convert(voiceId, {
@@ -141,7 +146,7 @@ router.post("/create", async (req, res) => {
     },
   });
 
-  // // Transformer le reader en stream Node
+  // Transformer le reader en stream Node
   const reader = audio.getReader();
   const stream = new Readable({
     async read() {
@@ -150,7 +155,7 @@ router.post("/create", async (req, res) => {
     },
   });
 
-  // // 2) Pour SAUVEGARDER en MP3 :
+  // Sauvegarder MP3 :
   const mp3Path = `./${uniqid()}_story.mp3`;
   const mp3 = fs.createWriteStream(mp3Path);
   stream.pipe(mp3);
@@ -158,13 +163,12 @@ router.post("/create", async (req, res) => {
     mp3.on("finish", resolve);
     mp3.on("error", reject);
   });
-  console.log("MP3 enregistré : ", mp3Path);
 
-  // // Upload vers Cloudinary
+  // Upload vers Cloudinary
   try {
     const cloudinaryUrl = await UploadMP3ToCLoudinary(mp3Path);
 
-    //   // Sauvegarde en base de données
+    //  Sauvegarde en base de données
     const user = await User.findOne({ token: token });
     if (!user) {
       return res.json({ result: false, error: "Utilisateur non trouvé" });
@@ -181,7 +185,9 @@ router.post("/create", async (req, res) => {
       },
     });
     await newStory.save();
-    const story = await Story.findOne({ url: cloudinaryUrl }).populate("author");
+    const story = await Story.findOne({ url: cloudinaryUrl }).populate(
+      "author"
+    );
 
     res.json({ result: true, story: story });
   } catch (error) {
@@ -226,7 +232,9 @@ router.post("/favorites", async (req, res) => {
     if (!user) {
       return res.json({ result: false, error: "Utilisateur non trouvé" });
     }
-    const myStories = await Story.find({ author: user._id }).populate("author").populate("like");
+    const myStories = await Story.find({ author: user._id })
+      .populate("author")
+      .populate("like");
     const storiesLiked = await Story.find({
       like: { $in: [user._id] },
     })
@@ -245,7 +253,6 @@ router.post("/favorites", async (req, res) => {
 // ROUTE POST LIKE
 
 router.post("/like", async (req, res) => {
-  console.log(req.body);
   const { token, storyId } = req.body;
   if (!checkBody(req.body, ["token", "storyId"])) {
     return res.json({ result: false, error: "Missing or empty fields" });
@@ -263,18 +270,24 @@ router.post("/like", async (req, res) => {
       return res.json({ result: false, message: "Story doesn't exist" });
     }
 
-    const alreadyLiked = story.like.some((id) => id.toString() === user._id.toString());
+    const alreadyLiked = story.like.some(
+      (id) => id.toString() === user._id.toString()
+    );
 
     let newLikeArray = story.like;
 
     if (alreadyLiked) {
-      newLikeArray = newLikeArray.filter((id) => id.toString() !== user._id.toString());
+      newLikeArray = newLikeArray.filter(
+        (id) => id.toString() !== user._id.toString()
+      );
     } else {
       newLikeArray.push(user._id);
     }
 
-    const resultat = await Story.updateOne({ _id: storyId }, { like: newLikeArray });
-    console.log("resultat", resultat);
+    const resultat = await Story.updateOne(
+      { _id: storyId },
+      { like: newLikeArray }
+    );
     if (resultat.modifiedCount === 1) {
       res.json({ result: true, message: "Story successfully like/unlike" });
     } else {
@@ -298,7 +311,9 @@ router.post("/play", async (req, res) => {
     if (!user) {
       return res.json({ result: false, message: "user not found" });
     }
-    user.recently_played = user.recently_played.filter((id) => id.toString() !== storyId);
+    user.recently_played = user.recently_played.filter(
+      (id) => id.toString() !== storyId
+    );
 
     user.recently_played.unshift(storyId);
     const newArray = user.recently_played;
@@ -315,7 +330,7 @@ router.post("/play", async (req, res) => {
   }
 });
 
-// ROUTE GET TOP TEN FROM SLEEPIE
+// ROUTE GET TOP 10 FROM SLEEPIE
 router.get("/mostlistenedstories", async (req, res) => {
   const sleepyId = process.env.SLEEPIE_ID;
 

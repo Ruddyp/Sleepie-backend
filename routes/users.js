@@ -18,7 +18,8 @@ router.post("/signup", async (req, res) => {
   // Vérification de l'email
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$/;
   const isValidEmail = (email) => emailRegex.test(email);
-  if (!isValidEmail(email)) return res.json({ result: false, error: "Email invalide" });
+  if (!isValidEmail(email))
+    return res.json({ result: false, error: "Email invalide" });
 
   try {
     // Vérification si l'email existe dans la BDD
@@ -36,7 +37,10 @@ router.post("/signup", async (req, res) => {
     });
     const savedUser = await newUser.save();
     if (!savedUser)
-      return res.json({ result: false, message: "Erreur lors de la création du user" });
+      return res.json({
+        result: false,
+        message: "Erreur lors de la création du user",
+      });
 
     res.json({
       result: true,
@@ -60,8 +64,14 @@ router.post("/signin", async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email: req.body.email }).populate("recently_played");
-    if (user === null) return res.json({ result: false, error: "Erreur dans l'email ou dans le mot de passe" });
+    const user = await User.findOne({ email: req.body.email }).populate(
+      "recently_played"
+    );
+    if (user === null)
+      return res.json({
+        result: false,
+        error: "Erreur dans l'email ou dans le mot de passe",
+      });
 
     const { username, token, email, recently_played } = user;
     if (user && bcrypt.compareSync(password, user.password)) {
@@ -77,8 +87,6 @@ router.post("/signin", async (req, res) => {
         .populate("label")
         .populate("like");
 
-      console.log("liked");
-
       res.json({
         result: true,
         data: {
@@ -93,7 +101,10 @@ router.post("/signin", async (req, res) => {
         },
       });
     } else {
-      res.json({ result: false, error: "Erreur dans l'email ou dans le mot de passe" });
+      res.json({
+        result: false,
+        error: "Erreur dans l'email ou dans le mot de passe",
+      });
     }
   } catch (error) {
     res.json({ result: false, error, message: "catch" });

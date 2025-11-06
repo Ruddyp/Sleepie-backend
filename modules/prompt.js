@@ -4,6 +4,8 @@ function wordsFromMinutes(min) {
   return min * WPM;
 }
 
+// SYSTEM PROMPT
+
 const getSystemPrompt = () => {
   return `
 Tu es un auteur francophone d'histoires apaisantes audio.
@@ -29,6 +31,8 @@ Anti-répétition (très important) :
 - Avant de finir, fais une **micro-relecture** : supprime répétitions et doublons, fusionne les phrases redondantes.
 `.trim();
 };
+
+// USER CHOICE PROMPT
 
 const storyType = {
   "Un voyage":
@@ -104,6 +108,7 @@ const getUserPrompt = (
     ? `- L'histoire se déroule avec une météo : ${weather}.`
     : "";
 
+  // CONSIGNES GÉNÉRALES D'UTILISATION DU PROMPT
   return `
 Consignes générales :
 - Écris une histoire originale, apaisante et **narrativement cohérente** (~${nbWords} mots, tolérance –0 %, +5 %).
